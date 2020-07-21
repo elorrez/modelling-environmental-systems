@@ -5,25 +5,44 @@ date: "7/21/2020"
 output: pdf_document
 ---
 
-```{r}
-# ========== 1. Have a look at the VSEM model description: ==========
+
+ ========== 1. Have a look at the VSEM model description: ==========
 library(BayesianTools)
 ?VSEM
 
-
-```
-
 ```{r}
-# ========== 2. Create some input data (radiation) and get a set of reference parameters as shown in the Examples section. ========== 
-
+library(BayesianTools)
+?VSEM
+```
+========== 2. Create some input data (radiation) and get a set of reference parameters as shown in the Examples section. ========== 
+```{r}
+PAR <- VSEMcreatePAR(1:1000)
+plot(PAR, main = "PAR (driving the model)", xlab = "Day")
 
 ```
 
 ```{r}
 # ========== 3. Get VSEM to run with the created data and visualize the simulated output (NEE and biomass pools). ========== 
 #What catches your eye with regard to above- and below ground biomass, and how can you explain this?
+# 1. Why is it possible for the pool values to be below zero?
+# 2. The vlaues for above and below ground vegetation pool are in the same range. Above ground vegetation pool values are a bit more wide spread. 
 
+# load reference parameter definition (upper, lower prior)
+refPars <- VSEMgetDefaults()
+# this adds one additional parameter for the likelihood standard deviation (see below)
+refPars[12,] <- c(2, 0.1, 4) 
+rownames(refPars)[12] <- "error-sd"
+head(refPars)
 
+# create some simulated test data 
+# generally recommended to start with simulated data before moving to real data
+referenceData <- VSEM(refPars$best[1:11], PAR) # model predictions with reference parameters  
+referenceData[,1] = 1000 * referenceData[,1] 
+# this adds the error - needs to conform to the error definition in the likelihood
+obs <- referenceData + rnorm(length(referenceData), sd = refPars$best[12])
+oldpar <- par(mfrow = c(2,2))
+for (i in 1:4) plotTimeSeries(observed = obs[,i], 
+                              predicted = referenceData[,i], main = colnames(referenceData)[i])
 ```
 
 ```{r}
